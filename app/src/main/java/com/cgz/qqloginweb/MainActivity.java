@@ -59,7 +59,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mBtLogin.setOnClickListener(this);
 
+        restoreInfo();
+    }
 
+    private void restoreInfo() {
+        String number = mSp.getString("number", "");
+        String password = mSp.getString("password", "");
+        mEtNumber.setText(number);
+        mEtPassword.setText(password);
     }
 
     /**
