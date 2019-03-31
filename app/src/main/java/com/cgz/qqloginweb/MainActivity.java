@@ -7,7 +7,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private EditText mEtNumber;
     private EditText mEtPassword;
@@ -24,7 +24,17 @@ public class MainActivity extends AppCompatActivity {
         mCbRemember = findViewById(R.id.cb_remember);
         mBtLogin = findViewById(R.id.bt_login);
 
+        mBtLogin.setOnClickListener(this);
 
+
+    }
+
+    /**
+     * 登录按钮的点击事件
+     * @param v
+     */
+    @Override
+    public void onClick(View v) {
 
     }
 }
