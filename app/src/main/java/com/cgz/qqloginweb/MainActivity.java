@@ -1,6 +1,8 @@
 package com.cgz.qqloginweb;
 
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -10,13 +12,38 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    private static final int STAUS_SUCCESS = 1;
+    private static final int STAUS_ERROR = 2;
     private EditText mEtNumber;
     private EditText mEtPassword;
     private CheckBox mCbRemember;
     private Button mBtLogin;
     private SharedPreferences mSp;
+    private Handler mHandler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case STAUS_SUCCESS:
+
+                    break;
+                case STAUS_ERROR:
+                    Toast.makeText(MainActivity.this,"登录失败，服务器或网络错误",Toast.LENGTH_SHORT).show();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,8 +67,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     @Override
     public void onClick(View v) {
-        String number =  mEtNumber.getText().toString().trim();
-        String password =  mEtPassword.getText().toString().trim();
+        final String number =  mEtNumber.getText().toString().trim();
+        final String password =  mEtPassword.getText().toString().trim();
 
         if (TextUtils.isEmpty(number) || TextUtils.isEmpty(password)) {
             Toast.makeText(this,"用户名和密码不能为空",Toast.LENGTH_SHORT).show();
@@ -55,8 +82,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                  editor.putString("number",number);
                  editor.putString("password",password);
                  editor.commit(); // 提交数据，类似关闭流，事务
-
              }
+             new Thread(){
+                 @Override
+                 public void run() {
+                     String urlPath = "http://localhost:8080/Day10/LoginServlet?username="+ number +"&password="+password;
+                     try {
+                         URL url = new URL(urlPath);
+                         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                         conn.setRequestMethod("GET");
+                         conn.setConnectTimeout(5000);
+                         int code = conn.getResponseCode();
+                         if (code == 200) {
+                             InputStream is = conn.getInputStream();
+
+                         } else {
+                             Message msg = Message.obtain();
+                             msg.what = STAUS_ERROR;
+                             mHandler.sendMessage(msg);
+                         }
+                     } catch (Exception e) {
+                         e.printStackTrace();
+                         Message msg = Message.obtain();
+                         msg.what = STAUS_ERROR;
+                         mHandler.sendMessage(msg);
+                     }
+                 }
+             }.start();
         }
     }
 }
