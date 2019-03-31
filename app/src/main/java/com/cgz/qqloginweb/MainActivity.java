@@ -17,6 +17,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.stream.Stream;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -33,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case STAUS_SUCCESS:
-
+                    Toast.makeText(MainActivity.this,(String)msg.obj,Toast.LENGTH_SHORT).show();
                     break;
                 case STAUS_ERROR:
                     Toast.makeText(MainActivity.this,"登录失败，服务器或网络错误",Toast.LENGTH_SHORT).show();
@@ -86,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
              new Thread(){
                  @Override
                  public void run() {
-                     String urlPath = "http://localhost:8080/Day10/LoginServlet?username="+ number +"&password="+password;
+                     String urlPath = "http://192.168.102.115:8080/Day10/LoginServlet?username="+ number +"&password="+password;
                      try {
                          URL url = new URL(urlPath);
                          HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -96,6 +97,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                          if (code == 200) {
                              InputStream is = conn.getInputStream();
 
+                             String result = StreamUtils.readStream(is);
+                             Message msg = Message.obtain();
+                             msg.what = STAUS_SUCCESS;
+                             msg.obj = result;
+                             mHandler.sendMessage(msg);
                          } else {
                              Message msg = Message.obtain();
                              msg.what = STAUS_ERROR;
