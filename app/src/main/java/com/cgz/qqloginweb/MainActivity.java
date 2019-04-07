@@ -17,6 +17,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.stream.Stream;
 
 
@@ -29,22 +30,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private CheckBox mCbRemember;
     private Button mBtLogin;
     private SharedPreferences mSp;
-    private Handler mHandler = new Handler(){
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case STAUS_SUCCESS:
-                    Toast.makeText(MainActivity.this,(String)msg.obj,Toast.LENGTH_SHORT).show();
-                    break;
-                case STAUS_ERROR:
-                    Toast.makeText(MainActivity.this,"登录失败，服务器或网络错误",Toast.LENGTH_SHORT).show();
-                    break;
 
-                default:
-                    break;
-            }
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,34 +80,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
              new Thread(){
                  @Override
                  public void run() {
-                     String urlPath = "http://192.168.102.115:8080/Day10/LoginServlet?username="+ number +"&password="+password;
+                     String urlPath = "http://192.168.102.115:8080/Day10/LoginServlet";
                      try {
                          URL url = new URL(urlPath);
                          HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                         conn.setRequestMethod("GET");
+                         conn.setRequestMethod("POST");
                          conn.setConnectTimeout(5000);
+                         // 设置发送的数据类型为表单类型，会被添加到http body当中
+                         conn.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
+
+                         String data = "username="+ URLEncoder.encode(number,"utf-8")+"&password="+URLEncoder.encode(password,"utf-8");
+                         conn.setRequestProperty("Content-Length",String .valueOf(data.length()));
+
+                         // post请求是把数据以流的方式，写给了服务器
+                         // 指定请求输出，模式
+                         conn.setDoInput(true);
+                         conn.getOutputStream().write(data.getBytes());
+
                          int code = conn.getResponseCode();
                          if (code == 200) {
                              InputStream is = conn.getInputStream();
 
                              String result = StreamUtils.readStream(is);
-                             Message msg = Message.obtain();
-                             msg.what = STAUS_SUCCESS;
-                             msg.obj = result;
-                             mHandler.sendMessage(msg);
+                             showToastInAnyThread(result);
+
                          } else {
-                             Message msg = Message.obtain();
-                             msg.what = STAUS_ERROR;
-                             mHandler.sendMessage(msg);
+                             showToastInAnyThread("请求失败");
                          }
                      } catch (Exception e) {
                          e.printStackTrace();
-                         Message msg = Message.obtain();
-                         msg.what = STAUS_ERROR;
-                         mHandler.sendMessage(msg);
+                         showToastInAnyThread("请求失败");
                      }
                  }
              }.start();
         }
     }
+
+    private void showToastInAnyThread(final String result) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this,result,Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 }
+
